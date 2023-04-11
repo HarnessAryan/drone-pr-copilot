@@ -6,6 +6,7 @@ package plugin
 
 import (
 	"context"
+
 	"github.com/google/go-github/v41/github"
 	"golang.org/x/oauth2"
 )
@@ -33,6 +34,8 @@ func Exec(ctx context.Context, args Args) error {
 	//		log.Fatalf("Error posting review comment: %v", err)
 	//	}
 	//}
+
+	// GetPrInfo(args.GithubToken)
 	return nil
 }
 
