@@ -1,4 +1,4 @@
-module {{ GoModule }}
+module github.com/harness/drone-pr-copilot
 
 go 1.12
 

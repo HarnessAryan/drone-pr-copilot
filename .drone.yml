@@ -12,7 +12,7 @@ steps:
 - name: publish
   image: plugins/docker
   settings:
-    repo: {{DockerRepository}}
+    repo: d1wilko/drone-pr-copilot
     auto_tag: true
     dockerfile: docker/Dockerfile
     username:

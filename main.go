@@ -7,7 +7,7 @@ package main
 import (
 	"context"
 
-	"{{ GoModule }}/plugin"
+	"github.com/harness/drone-pr-copilot/plugin"
 
 	"github.com/kelseyhightower/envconfig"
 	"github.com/sirupsen/logrus"

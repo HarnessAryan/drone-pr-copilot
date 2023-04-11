@@ -1,25 +1,52 @@
-# boilr-plugin
+A plugin to Drone PR copilot.
 
-This is a [boilr template](https://github.com/tmrts/boilr) for creating a pipeline plugin. Use a pipeline plugin to create and share re-usable pipeline steps. Get started by installing the template:
+# Usage
 
-```console
-$ boilr template download drone/boilr-plugin drone-plugin
+The following settings changes this plugin's behavior.
+
+* param1 (optional) does something.
+* param2 (optional) does something different.
+
+Below is an example `.drone.yml` that uses this plugin.
+
+```yaml
+kind: pipeline
+name: default
+
+steps:
+- name: run d1wilko/drone-pr-copilot plugin
+  image: d1wilko/drone-pr-copilot
+  pull: if-not-exists
+  settings:
+    param1: foo
+    param2: bar
 ```
 
-create a project in directory my-plugin:
+# Building
 
-```console
-$ boilr template use drone-plugin my-plugin
-```
-
-enter the docker registry name for this project:
+Build the plugin binary:
 
 ```text
-[?] Please choose a value for "DockerRepository" [default: "owner/name"]:
+scripts/build.sh
 ```
 
-enter the go module name:
+Build the plugin image:
 
 ```text
-[?] Please choose a value for "GoModule" [default: "github.com/owner/name":
+docker build -t d1wilko/drone-pr-copilot -f docker/Dockerfile .
+```
+
+# Testing
+
+Execute the plugin from your current working directory:
+
+```text
+docker run --rm -e PLUGIN_PARAM1=foo -e PLUGIN_PARAM2=bar \
+  -e DRONE_COMMIT_SHA=8f51ad7884c5eb69c11d260a31da7a745e6b78e2 \
+  -e DRONE_COMMIT_BRANCH=master \
+  -e DRONE_BUILD_NUMBER=43 \
+  -e DRONE_BUILD_STATUS=success \
+  -w /drone/src \
+  -v $(pwd):/drone/src \
+  d1wilko/drone-pr-copilot
 ```
