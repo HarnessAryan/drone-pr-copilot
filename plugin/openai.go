@@ -2,6 +2,7 @@ package plugin
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	openai "github.com/sashabaranov/go-openai"
@@ -22,6 +23,7 @@ func New(opts ...Option) *client {
 }
 
 func (c *client) Feedback(fileDiffs []*FileDiff) []*Feedback {
+	feedback := []*Feedback{}
 	prompt := `
 	Your job is to review pull request changes in code and return back improvements based on best practices that you can find online.
 	I will give you as input the file before and after the changes have been made to it.
@@ -56,8 +58,23 @@ func (c *client) Feedback(fileDiffs []*FileDiff) []*Feedback {
 			fmt.Println("ChatCompletion error: %w", err)
 			continue
 		}
-		fmt.Println("resp is: ", resp)
+		// Try to unmarshal the response into Feedback struct
+		content := resp.Choices[0].Message.Content
+		var f []*Feedback
+		err = json.Unmarshal([]byte(content), &f)
+		if err != nil {
+			fmt.Printf("could not unmarshal response: %s\n", content)
+			continue
+		}
+
+		for _, entry := range f {
+			entry.Filename = diff.Name
+		}
+
+		feedback = append(feedback, f...)
+
+		fmt.Println("successfully received feedback from openai")
 	}
 
-	return []*Feedback{}
+	return feedback
 }
