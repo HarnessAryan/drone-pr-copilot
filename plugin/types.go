@@ -1,6 +1,6 @@
 package plugin
 
-// File represents a list of lines in the pull request
+// FileDiff represents a list of lines in the pull request
 type FileDiff struct {
 	Name          string
 	PreviousLines []Line
@@ -18,4 +18,5 @@ type Feedback struct {
 	LineNumber int    `json:"line_number"`
 	Suggestion string `json:"suggestion"`
 	Severity   string `json:"severity"` // optional
+	Message    string `json:"message"`  // optional
 }
