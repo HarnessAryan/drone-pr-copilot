@@ -8,6 +8,7 @@ import (
 	"context"
 	"github.com/google/go-github/v41/github"
 	"golang.org/x/oauth2"
+	"log"
 )
 
 // Args provides plugin execution arguments.
@@ -24,15 +25,30 @@ type Args struct {
 
 // Exec executes the plugin.
 func Exec(ctx context.Context, args Args) error {
-	//ctx = context.Background()
-	//githubClient := createGithubClient(ctx, args)
-	//feedbackList := []Feedback{}
-	//for _, feedbackItem := range feedbackList {
-	//	err := postReviewComment(ctx, githubClient, args.Pipeline.Repo.Namespace, args.Pipeline.Repo.Name, args.Pipeline.PullRequest.Number, feedbackItem)
-	//	if err != nil {
-	//		log.Fatalf("Error posting review comment: %v", err)
-	//	}
-	//}
+	ctx = context.Background()
+	githubClient := createGithubClient(ctx, args)
+	feedbackList := []*Feedback{
+		{
+			Filename:   "renovate.json",
+			LineNumber: 1,
+			Suggestion: "Replace 'fmt.Println()' with 'log.Println()'",
+			Message:    "Use 'log' package instead of 'fmt' for better control over logging output.",
+			Severity:   "warning",
+		},
+		{
+			Filename:   "renovate.json",
+			LineNumber: 4,
+			Suggestion: "Add error handling for the function call",
+			Message:    "Error handling is missing for the function call. It's important to handle errors to avoid unexpected behavior.",
+			Severity:   "error",
+		},
+	}
+
+	err := postReviewComment(ctx, githubClient, args.Pipeline.Repo.Namespace, args.Pipeline.Repo.Name, args.Pipeline.PullRequest.Number, feedbackList)
+	if err != nil {
+		log.Fatalf("Error posting review comment: %v", err)
+	}
+
 	return nil
 }
 

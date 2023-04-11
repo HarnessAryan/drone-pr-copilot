@@ -18,6 +18,6 @@ func New(opts ...Option) *client {
 	return c
 }
 
-func (c *client) Feedback(files []*File) []*Feedback {
+func (c *client) Feedback(files []*FileDiff) []*Feedback {
 	return []*Feedback{}
 }
