@@ -1,16 +1,15 @@
 package plugin
 
 // File represents a list of lines in the pull request
-type File struct {
+type FileDiff struct {
 	Name          string
 	PreviousLines []Line
-	DiffLines     []Line
+	NewLines      []Line
 }
 
 type Line struct {
 	Number  int
 	Content string
-	Removed bool // whether the line was added or removed, default: false
 }
 
 // Feedback is what we receive from OpenAI and comment back on the PR
