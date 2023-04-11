@@ -2,14 +2,14 @@ package plugin
 
 // FileDiff represents a list of lines in the pull request
 type FileDiff struct {
-	Name          string
-	PreviousLines []Line
-	NewLines      []Line
+	Name          string `json:"name"`
+	PreviousLines []Line `json:"previous_lines"`
+	NewLines      []Line `json:"new_lines"`
 }
 
 type Line struct {
-	Number  int
-	Content string
+	Number  int    `json:"number"`
+	Content string `json:"content"`
 }
 
 // Feedback is what we receive from OpenAI and comment back on the PR
