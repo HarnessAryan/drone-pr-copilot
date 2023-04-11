@@ -16,6 +16,9 @@ type Args struct {
 	// TODO replace or remove
 	Param1 string `envconfig:"PLUGIN_PARAM1"`
 	Param2 string `envconfig:"PLUGIN_PARAM2"`
+
+	// OpenAI key
+	OpenAIKey string `envconfig:"PLUGIN_OPENAI_KEY"`
 }
 
 // Exec executes the plugin.
