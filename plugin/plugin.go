@@ -6,10 +6,10 @@ package plugin
 
 import (
 	"context"
+	"log"
 
 	"github.com/google/go-github/v41/github"
 	"golang.org/x/oauth2"
-	"log"
 )
 
 // Args provides plugin execution arguments.
@@ -26,28 +26,30 @@ type Args struct {
 
 // Exec executes the plugin.
 func Exec(ctx context.Context, args Args) error {
-	ctx = context.Background()
 	githubClient := createGithubClient(ctx, args)
-	feedbackList := []*Feedback{
-		{
-			Filename:   "renovate.json",
-			LineNumber: 1,
-			Suggestion: "Replace 'fmt.Println()' with 'log.Println()'",
-			Message:    "Use 'log' package instead of 'fmt' for better control over logging output.",
-			Severity:   "warning",
-		},
-		{
-			Filename:   "renovate.json",
-			LineNumber: 4,
-			Suggestion: "Add error handling for the function call",
-			Message:    "Error handling is missing for the function call. It's important to handle errors to avoid unexpected behavior.",
-			Severity:   "error",
-		},
-	}
+	// feedbackList := []*Feedback{
+	// 	{
+	// 		Filename:   "renovate.json",
+	// 		LineNumber: 1,
+	// 		Suggestion: "Replace 'fmt.Println()' with 'log.Println()'",
+	// 		Message:    "Use 'log' package instead of 'fmt' for better control over logging output.",
+	// 		Severity:   "warning",
+	// 	},
+	// 	{
+	// 		Filename:   "renovate.json",
+	// 		LineNumber: 4,
+	// 		Suggestion: "Add error handling for the function call",
+	// 		Message:    "Error handling is missing for the function call. It's important to handle errors to avoid unexpected behavior.",
+	// 		Severity:   "error",
+	// 	},
+	// }
 
-	err := postReviewComment(ctx, githubClient, args.Pipeline.Repo.Namespace, args.Pipeline.Repo.Name, args.Pipeline.PullRequest.Number, feedbackList)
+	// err := postReviewComment(ctx, githubClient, args.Pipeline.Repo.Namespace, args.Pipeline.Repo.Name, args.Pipeline.PullRequest.Number, feedbackList)
+
+	_, err := GetFileDiff(ctx, githubClient, args.Pipeline.Repo.Namespace, args.Pipeline.Repo.Name, args.Pipeline.PullRequest.Number)
+
 	if err != nil {
-		log.Fatalf("Error posting review comment: %v", err)
+		log.Fatalf("Error: %v\n", err)
 	}
 
 	return nil

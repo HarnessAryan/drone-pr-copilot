@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/google/go-github/v41/github"
-	"golang.org/x/oauth2"
 )
 
 func getFileContentAtCommit(ctx context.Context, client *github.Client, owner, repo, path, commitSHA string) (string, error) {
@@ -38,24 +37,10 @@ func convertContentToLines(content string) []Line {
 	return lineStructs
 }
 
-func GetPrInfo(token string) []FileDiff {
-	// TODO: get these from the pipeline
-	owner := "harness"
-	repo := "drone-pr-copilot"
-	pullRequestNumber := 2 // Replace with the pull request number
-
-	ctx := context.Background()
-	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: token},
-	)
-	tc := oauth2.NewClient(ctx, ts)
-
-	client := github.NewClient(tc)
-
+func GetFileDiff(ctx context.Context, client *github.Client, owner string, repo string, pullRequestNumber int) ([]FileDiff, error) {
 	pr, _, err := client.PullRequests.Get(ctx, owner, repo, pullRequestNumber)
 	if err != nil {
-		fmt.Printf("Error: %v\n", err)
-		return nil
+		return nil, err
 	}
 
 	baseCommitID := pr.GetBase().GetSHA()
@@ -63,8 +48,7 @@ func GetPrInfo(token string) []FileDiff {
 
 	files, _, err := client.PullRequests.ListFiles(ctx, owner, repo, pullRequestNumber, nil)
 	if err != nil {
-		fmt.Printf("Error: %v\n", err)
-		return nil
+		return nil, err
 	}
 
 	fileDiffs := []FileDiff{}
@@ -101,5 +85,5 @@ func GetPrInfo(token string) []FileDiff {
 	jsonOutput, _ := json.MarshalIndent(fileDiffs, "", "  ")
 	fmt.Println(string(jsonOutput))
 
-	return fileDiffs
+	return fileDiffs, nil
 }
