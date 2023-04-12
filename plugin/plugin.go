@@ -60,7 +60,7 @@ func Exec(ctx context.Context, args Args) error {
 	openAIClient := New(WithToken(args.OpenAIKey))
 	feedback := openAIClient.Feedback(ctx, fileDiffs)
 
-	err = postReviewComment(ctx, githubClient, args.Pipeline.Commit.Author.Name, args.Pipeline.Repo.Name, args.Pipeline.PullRequest.Number, feedback)
+	err = postReviewComment(ctx, githubClient, args.Pipeline.Repo.Namespace, args.Pipeline.Repo.Name, args.Pipeline.PullRequest.Number, feedback)
 	if err != nil {
 		log.Fatalf("could not post review comments, err: %s", err)
 	}

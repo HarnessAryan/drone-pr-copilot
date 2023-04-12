@@ -18,5 +18,4 @@ type Feedback struct {
 	LineNumber int    `json:"line_number"`
 	Suggestion string `json:"suggestion"`
 	Severity   string `json:"severity"` // optional
-	Message    string `json:"message"`  // optional
 }

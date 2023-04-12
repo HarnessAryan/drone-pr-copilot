@@ -66,6 +66,11 @@ and here is the new file:
 		content := resp.Choices[0].Message.Content
 		var f []*Feedback
 		err = json.Unmarshal([]byte(content), &f)
+		for _, g := range f {
+			fmt.Println("g name: ", g.Filename)
+			fmt.Println("g suggestion: ", g.Suggestion)
+			fmt.Println("g line number: ", g.LineNumber)
+		}
 		if err != nil {
 			fmt.Printf("could not unmarshal response: %s\n", content)
 			continue
@@ -78,6 +83,11 @@ and here is the new file:
 		feedback = append(feedback, f...)
 
 		fmt.Printf("feedback: %+v\n", f)
+	}
+
+	for _, k := range feedback {
+		fmt.Println("k name: ", k.Filename)
+		fmt.Println(k)
 	}
 
 	return feedback
