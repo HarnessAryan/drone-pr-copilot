@@ -6,8 +6,10 @@ package plugin
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/google/go-github/v41/github"
 	"golang.org/x/oauth2"
@@ -58,4 +60,137 @@ func createGithubClient(ctx context.Context, args Args) *github.Client {
 
 	// Create a new GitHub client
 	return github.NewClient(httpClient)
+}
+
+func getFileContentAtCommit(ctx context.Context, client *github.Client, owner, repo, path, commitSHA string) (string, error) {
+	fileContent, _, _, err := client.Repositories.GetContents(ctx, owner, repo, path, &github.RepositoryContentGetOptions{Ref: commitSHA})
+	if err != nil {
+		return "", err
+	}
+
+	decoded, err := fileContent.GetContent()
+	if err != nil {
+		return "", err
+	}
+
+	return decoded, nil
+}
+
+func convertContentToLines(content string) []Line {
+	lines := strings.Split(content, "\n")
+	lineStructs := make([]Line, len(lines))
+
+	for i, line := range lines {
+		lineStructs[i] = Line{
+			Number:  i + 1,
+			Content: line,
+		}
+	}
+
+	return lineStructs
+}
+
+func GetFileDiff(ctx context.Context, client *github.Client, owner string, repo string, pullRequestNumber int) ([]*FileDiff, error) {
+	pr, _, err := client.PullRequests.Get(ctx, owner, repo, pullRequestNumber)
+	if err != nil {
+		return nil, err
+	}
+
+	baseCommitID := pr.GetBase().GetSHA()
+	latestCommitID := pr.GetHead().GetSHA()
+
+	files, _, err := client.PullRequests.ListFiles(ctx, owner, repo, pullRequestNumber, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	commits, _, err := client.PullRequests.ListCommits(ctx, owner, repo, pullRequestNumber, nil)
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return nil, err
+	}
+
+	commitNumbers := make(map[string]int)
+	for i, commit := range commits {
+		commitNumbers[commit.GetSHA()] = i + 1
+	}
+
+	fileDiffs := []*FileDiff{}
+
+	for _, file := range files {
+		name := file.GetFilename()
+		var previousLines, newLines []Line
+		diff := file.GetPatch()
+		commitNumber := commitNumbers[latestCommitID]
+
+		beforePR, err := getFileContentAtCommit(ctx, client, owner, repo, name, baseCommitID)
+		if err != nil {
+			if !strings.Contains(err.Error(), "404 Not Found") {
+				fmt.Printf("Error getting file content before PR: %v\n", err)
+				continue
+			}
+		} else {
+			previousLines = convertContentToLines(beforePR)
+		}
+
+		afterPR, err := getFileContentAtCommit(ctx, client, owner, repo, name, latestCommitID)
+		if err != nil {
+			fmt.Printf("Error getting file content after PR: %v\n", err)
+			continue
+		}
+		newLines = convertContentToLines(afterPR)
+
+		fileDiffs = append(fileDiffs, &FileDiff{
+			Name:          name,
+			PreviousLines: previousLines,
+			NewLines:      newLines,
+			Diff:          convertContentToLines(diff),
+			CommitNumber:  commitNumber,
+		})
+	}
+
+	_, err = json.MarshalIndent(fileDiffs, "", "  ")
+	if err != nil {
+		fmt.Println("error:", err)
+	}
+	return fileDiffs, nil
+}
+
+func postReviewComment(ctx context.Context, client *github.Client, owner, repo string, prNumber int, feedbackList []*Feedback) error {
+	// Check if the PR exists (again)
+	fmt.Println("owner: ", owner)
+	fmt.Println("repo: ", repo)
+	fmt.Println("prNumber: ", prNumber)
+	pr, _, err := client.PullRequests.Get(ctx, owner, repo, prNumber)
+	if pr == nil {
+		return fmt.Errorf("PR not found")
+	}
+
+	// Prepare the draft review comments
+	var draftComments []*github.DraftReviewComment
+	for _, feedback := range feedbackList {
+		if feedback.LineNumber < 0 {
+			continue
+		}
+		fmt.Println("filename: ", feedback.Filename)
+		fmt.Println("line number: ", feedback.RelativeLineNumber)
+		fmt.Println("message: ", feedback.Suggestion)
+		comment := &github.DraftReviewComment{
+			Path:     github.String(feedback.Filename),
+			Position: github.Int(feedback.RelativeLineNumber),
+			Body:     github.String(feedback.Suggestion),
+		}
+		draftComments = append(draftComments, comment)
+	}
+
+	// Prepare the pull request review request
+	pullRequestReviewRequest := &github.PullRequestReviewRequest{
+		Event:    github.String("REQUEST_CHANGES"),
+		Body:     github.String("Please address the suggested inline changes."),
+		Comments: draftComments,
+	}
+
+	// Create the review
+	_, _, err = client.PullRequests.CreateReview(ctx, owner, repo, prNumber, pullRequestReviewRequest)
+	return err
 }
