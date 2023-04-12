@@ -51,12 +51,24 @@ func GetFileDiff(ctx context.Context, client *github.Client, owner string, repo 
 		return nil, err
 	}
 
+	commits, _, err := client.PullRequests.ListCommits(ctx, owner, repo, pullRequestNumber, nil)
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return nil, err
+	}
+
+	commitNumbers := make(map[string]int)
+	for i, commit := range commits {
+		commitNumbers[commit.GetSHA()] = i + 1
+	}
+
 	fileDiffs := []*FileDiff{}
 
 	for _, file := range files {
 		name := file.GetFilename()
 		var previousLines, newLines []Line
 		diff := file.GetPatch()
+		commitNumber := commitNumbers[latestCommitID]
 
 		beforePR, err := getFileContentAtCommit(ctx, client, owner, repo, name, baseCommitID)
 		if err != nil {
@@ -80,6 +92,7 @@ func GetFileDiff(ctx context.Context, client *github.Client, owner string, repo 
 			PreviousLines: previousLines,
 			NewLines:      newLines,
 			Diff:          convertContentToLines(diff),
+			CommitNumber:  commitNumber,
 		})
 	}
 
