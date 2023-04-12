@@ -28,22 +28,22 @@ type Args struct {
 // Exec executes the plugin.
 func Exec(ctx context.Context, args Args) error {
 	githubClient := createGithubClient(ctx, args)
-	feedbackList := []*Feedback{
-		{
-			Filename:   "renovate.json",
-			LineNumber: 1,
-			Suggestion: "Replace 'fmt.Println()' with 'log.Println()'",
-			Message:    "Use 'log' package instead of 'fmt' for better control over logging output.",
-			Severity:   "warning",
-		},
-		{
-			Filename:   "renovate.json",
-			LineNumber: 4,
-			Suggestion: "Add error handling for the function call",
-			Message:    "Error handling is missing for the function call. It's important to handle errors to avoid unexpected behavior.",
-			Severity:   "error",
-		},
-	}
+	// feedbackList := []*Feedback{
+	// 	{
+	// 		Filename:   "renovate.json",
+	// 		LineNumber: 1,
+	// 		Suggestion: "Replace 'fmt.Println()' with 'log.Println()'",
+	// 		Message:    "Use 'log' package instead of 'fmt' for better control over logging output.",
+	// 		Severity:   "warning",
+	// 	},
+	// 	{
+	// 		Filename:   "renovate.json",
+	// 		LineNumber: 4,
+	// 		Suggestion: "Add error handling for the function call",
+	// 		Message:    "Error handling is missing for the function call. It's important to handle errors to avoid unexpected behavior.",
+	// 		Severity:   "error",
+	// 	},
+	// }
 
 	// Get changes
 	diff, err := GetFileDiff(ctx, githubClient, args.Pipeline.Repo.Namespace, args.Pipeline.Repo.Name, args.Pipeline.PullRequest.Number)
@@ -52,12 +52,28 @@ func Exec(ctx context.Context, args Args) error {
 		log.Fatalf("Error: %v\n", err)
 	}
 
-	// Post to OpenAI
-
 	// Post review comment
 	err = postReviewComment(ctx, githubClient, args.Pipeline.Repo.Namespace, args.Pipeline.Repo.Name, args.Pipeline.PullRequest.Number, feedbackList)
+	// Printing some data that we will need
+	fmt.Println("pipeline namespace: ", args.Pipeline.Repo.Namespace)
+	fmt.Println("pipeline name: ", args.Pipeline.Repo.Name)
+	fmt.Println("pr number: ", args.Pipeline.PullRequest.Number)
+	fmt.Println("commit author name: ", args.Pipeline.Commit.Author.Name)
+	fmt.Println("pipeline repo name: ", args.Pipeline.Repo.Name)
+
+	fileDiffs, err := GetFileDiff(ctx, githubClient, args.Pipeline.Repo.Namespace, args.Pipeline.Repo.Name, args.Pipeline.PullRequest.Number)
+
 	if err != nil {
-		log.Fatalf("Error: %v\n", err)
+		log.Fatalf("could not get file diff, err: %s", err)
+	}
+
+	// Pass in the file diffs to get feedback on them
+	openAIClient := New(WithToken(args.OpenAIKey))
+	feedback := openAIClient.Feedback(ctx, fileDiffs)
+
+	err = postReviewComment(ctx, githubClient, args.Pipeline.Commit.Author.Name, args.Pipeline.Repo.Name, args.Pipeline.PullRequest.Number, feedback)
+	if err != nil {
+		log.Fatalf("could not post review comments, err: %s", err)
 	}
 	return nil
 }

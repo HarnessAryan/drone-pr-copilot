@@ -77,7 +77,7 @@ and here is the new file:
 
 		feedback = append(feedback, f...)
 
-		fmt.Println("successfully received feedback from openai")
+		fmt.Printf("feedback: %+v\n", f)
 	}
 
 	return feedback

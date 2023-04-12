@@ -37,7 +37,7 @@ func convertContentToLines(content string) []Line {
 	return lineStructs
 }
 
-func GetFileDiff(ctx context.Context, client *github.Client, owner string, repo string, pullRequestNumber int) ([]FileDiff, error) {
+func GetFileDiff(ctx context.Context, client *github.Client, owner string, repo string, pullRequestNumber int) ([]*FileDiff, error) {
 	pr, _, err := client.PullRequests.Get(ctx, owner, repo, pullRequestNumber)
 	if err != nil {
 		return nil, err
@@ -51,7 +51,7 @@ func GetFileDiff(ctx context.Context, client *github.Client, owner string, repo 
 		return nil, err
 	}
 
-	fileDiffs := []FileDiff{}
+	fileDiffs := []*FileDiff{}
 
 	for _, file := range files {
 		name := file.GetFilename()
@@ -74,7 +74,7 @@ func GetFileDiff(ctx context.Context, client *github.Client, owner string, repo 
 		}
 		newLines = convertContentToLines(afterPR)
 
-		fileDiffs = append(fileDiffs, FileDiff{
+		fileDiffs = append(fileDiffs, &FileDiff{
 			Name:          name,
 			PreviousLines: previousLines,
 			NewLines:      newLines,
