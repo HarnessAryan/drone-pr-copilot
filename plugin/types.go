@@ -5,6 +5,7 @@ type FileDiff struct {
 	Name          string `json:"name"`
 	PreviousLines []Line `json:"previous_lines"`
 	NewLines      []Line `json:"new_lines"`
+	Diff          string `json:"diff"`
 }
 
 type Line struct {

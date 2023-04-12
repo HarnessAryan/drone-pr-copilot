@@ -56,6 +56,7 @@ func GetFileDiff(ctx context.Context, client *github.Client, owner string, repo 
 	for _, file := range files {
 		name := file.GetFilename()
 		var previousLines, newLines []Line
+		diff := file.GetPatch()
 
 		beforePR, err := getFileContentAtCommit(ctx, client, owner, repo, name, baseCommitID)
 		if err != nil {
@@ -78,6 +79,7 @@ func GetFileDiff(ctx context.Context, client *github.Client, owner string, repo 
 			Name:          name,
 			PreviousLines: previousLines,
 			NewLines:      newLines,
+			Diff:          diff,
 		})
 	}
 
