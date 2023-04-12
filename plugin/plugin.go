@@ -165,23 +165,39 @@ func GetFileDiff(ctx context.Context, client *github.Client, owner string, repo 
 
 func postReviewComment(ctx context.Context, client *github.Client, owner, repo string, prNumber int, feedbackList []*Feedback) error {
 	// Check if the PR exists (again)
-	fmt.Println("owner: ", owner)
-	fmt.Println("repo: ", repo)
-	fmt.Println("prNumber: ", prNumber)
-	pr, _, err := client.PullRequests.Get(ctx, owner, repo, prNumber)
-	if pr == nil {
-		return fmt.Errorf("PR not found")
+	_, _, err := client.PullRequests.Get(ctx, owner, repo, prNumber)
+	if err != nil {
+		fmt.Println(err)
+		return err
 	}
 
-	// Prepare the draft review comments
+	// Delete all existing comments
+
+	// Get all comments on the pull request
+	comments, _, err := client.PullRequests.ListComments(ctx, owner, repo, prNumber, nil)
+	if err != nil {
+		fmt.Println("error while fetching comments: ", err)
+	}
+	fmt.Println("found number of comments: ", len(comments))
+
+	// Iterate through all comments and resolve them
+	for _, comment := range comments {
+
+		_, err := client.PullRequests.DeleteComment(ctx, owner, repo, *comment.ID)
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
+
+	// Prepare new comments
 	var draftComments []*github.DraftReviewComment
 	for _, feedback := range feedbackList {
-		if feedback.LineNumber < 0 {
+		if feedback.RelativeLineNumber < 0 || feedback.LineNumber < 0 {
 			continue
 		}
 		fmt.Println("filename: ", feedback.Filename)
 		fmt.Println("line number: ", feedback.RelativeLineNumber)
-		fmt.Println("message: ", feedback.Suggestion)
+		fmt.Println("suggestion: ", feedback.Suggestion)
 		comment := &github.DraftReviewComment{
 			Path:     github.String(feedback.Filename),
 			Position: github.Int(feedback.RelativeLineNumber),
@@ -196,6 +212,10 @@ func postReviewComment(ctx context.Context, client *github.Client, owner, repo s
 		Body:     github.String("Please address the suggested inline changes."),
 		Comments: draftComments,
 	}
+
+	fmt.Printf("added %d comments to the PR!", len(draftComments))
+
+	// TODO: Add normal comments for all feedbacks with relative line number as -1
 
 	// Create the review
 	_, _, err = client.PullRequests.CreateReview(ctx, owner, repo, prNumber, pullRequestReviewRequest)

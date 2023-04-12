@@ -74,21 +74,14 @@ and here is the new file:
 
 		for _, entry := range f {
 			entry.Filename = diff.Name
-			fmt.Println("feedback content: ", diff.NewLines[entry.LineNumber-1].Content)
-			fmt.Printf("diff: %+v\n", diff.Diff)
 			entry.RelativeLineNumber = findInDiff(diff.NewLines[entry.LineNumber-1].Content, diff.Diff)
-			fmt.Println("relative line number: ", entry.RelativeLineNumber)
 		}
 
 		feedback = append(feedback, f...)
 
-		fmt.Printf("feedback: %+v\n", f)
 	}
 
-	for _, k := range feedback {
-		fmt.Println("k name: ", k.Filename)
-		fmt.Println(k)
-	}
+	fmt.Printf("received %d feedback!", len(feedback))
 
 	return feedback
 }
