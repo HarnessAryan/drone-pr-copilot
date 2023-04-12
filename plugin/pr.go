@@ -79,7 +79,7 @@ func GetFileDiff(ctx context.Context, client *github.Client, owner string, repo 
 			Name:          name,
 			PreviousLines: previousLines,
 			NewLines:      newLines,
-			Diff:          diff,
+			Diff:          convertContentToLines(diff),
 		})
 	}
 

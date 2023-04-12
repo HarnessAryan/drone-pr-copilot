@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	openai "github.com/sashabaranov/go-openai"
 )
@@ -66,11 +67,6 @@ and here is the new file:
 		content := resp.Choices[0].Message.Content
 		var f []*Feedback
 		err = json.Unmarshal([]byte(content), &f)
-		for _, g := range f {
-			fmt.Println("g name: ", g.Filename)
-			fmt.Println("g suggestion: ", g.Suggestion)
-			fmt.Println("g line number: ", g.LineNumber)
-		}
 		if err != nil {
 			fmt.Printf("could not unmarshal response: %s\n", content)
 			continue
@@ -78,6 +74,10 @@ and here is the new file:
 
 		for _, entry := range f {
 			entry.Filename = diff.Name
+			fmt.Println("feedback content: ", diff.NewLines[entry.LineNumber-1].Content)
+			fmt.Printf("diff: %+v\n", diff.Diff)
+			entry.RelativeLineNumber = findInDiff(diff.NewLines[entry.LineNumber-1].Content, diff.Diff)
+			fmt.Println("relative line number: ", entry.RelativeLineNumber)
 		}
 
 		feedback = append(feedback, f...)
@@ -91,4 +91,24 @@ and here is the new file:
 	}
 
 	return feedback
+}
+
+func findInDiff(s string, diff []Line) int {
+	for _, k := range diff {
+		if sanitize(s) == sanitize(k.Content) {
+			return k.Number - 1
+		}
+	}
+	return -1
+}
+
+func sanitize(s string) string {
+	if strings.HasPrefix(s, "+") {
+		s = s[1:]
+	}
+	if strings.HasPrefix(s, "-") {
+		s = s[1:]
+	}
+	s = strings.TrimSpace(s)
+	return s
 }

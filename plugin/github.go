@@ -20,12 +20,15 @@ func postReviewComment(ctx context.Context, client *github.Client, owner, repo s
 	// Prepare the draft review comments
 	var draftComments []*github.DraftReviewComment
 	for _, feedback := range feedbackList {
+		if feedback.LineNumber < 0 {
+			continue
+		}
 		fmt.Println("filename: ", feedback.Filename)
-		fmt.Println("line number: ", feedback.LineNumber)
+		fmt.Println("line number: ", feedback.RelativeLineNumber)
 		fmt.Println("message: ", feedback.Suggestion)
 		comment := &github.DraftReviewComment{
 			Path:     github.String(feedback.Filename),
-			Position: github.Int(4),
+			Position: github.Int(feedback.RelativeLineNumber),
 			Body:     github.String(feedback.Suggestion),
 		}
 		draftComments = append(draftComments, comment)
