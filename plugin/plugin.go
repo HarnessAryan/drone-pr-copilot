@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 
 	"github.com/google/go-github/v41/github"
@@ -31,11 +32,17 @@ type Args struct {
 func Exec(ctx context.Context, args Args) error {
 	// Printing some data that we will need
 	fmt.Println("pipeline namespace: ", args.Pipeline.Repo.Namespace)
-	fmt.Println("pr number: ", args.Pipeline.Build.Number)
+	tokens := strings.Split(args.Pipeline.Commit.Link, "/")
+	prs := tokens[len(tokens)-1]
+	pr, err := strconv.Atoi(prs)
+	if err != nil {
+		log.Fatalf("could not parse pr number")
+	}
+	fmt.Println("pr number: ", pr)
 	fmt.Println("pipeline repo name: ", args.Pipeline.Repo.Name)
 	githubClient := createGithubClient(ctx, args)
 
-	fileDiffs, err := GetFileDiff(ctx, githubClient, args.Pipeline.Repo.Namespace, args.Pipeline.Repo.Name, args.Pipeline.Build.Number)
+	fileDiffs, err := GetFileDiff(ctx, githubClient, args.Pipeline.Repo.Namespace, args.Pipeline.Repo.Name, pr)
 	if err != nil {
 		log.Fatalf("could not get file diff, err: %s", err)
 	}
@@ -44,7 +51,7 @@ func Exec(ctx context.Context, args Args) error {
 	openAIClient := New(WithToken(args.OpenAIKey))
 	feedback := openAIClient.Feedback(ctx, fileDiffs)
 
-	err = postReviewComment(ctx, githubClient, args.Pipeline.Repo.Namespace, args.Pipeline.Repo.Name, args.Pipeline.Build.Number, feedback)
+	err = postReviewComment(ctx, githubClient, args.Pipeline.Repo.Namespace, args.Pipeline.Repo.Name, pr, feedback)
 	if err != nil {
 		log.Fatalf("could not post review comments, err: %s", err)
 	}
