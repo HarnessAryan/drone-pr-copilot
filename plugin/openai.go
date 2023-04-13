@@ -26,16 +26,16 @@ func New(opts ...Option) *client {
 func (c *client) Feedback(ctx context.Context, fileDiffs []*FileDiff) []*Feedback {
 	feedback := []*Feedback{}
 	prompt := `
-Your job is to review pull request changes in code and return back improvements based on best practices that you can find online.
+Your job is to review pull request changes in Golang code and return back improvements based on best practices found in the official Golang documentation, style guides, or other reputable online sources.
 I will give you as input the file before and after the changes have been made to it.
-Your job is to review what can be improved and return back. Your reply needs to be just a valid json and nothing else.
+Your job is to review what can be improved and return back. Your reply needs to be just a valid JSON and nothing else.
 The response should be a list of objects which contain 'line_number' and 'suggestion'.
-The suggestion should be concise and to the point. Here is the original file:
+The suggestion should be concise and to the point. Please follow the official Golang guidelines and best practices, such as those in "Effective Go" and the Go Code Review Comments, while providing your suggestions.
 Here is the original file:
 %s
-and here is the new file:
-%s
-	`
+And here is the new file:
+%s`
+
 	for _, diff := range fileDiffs {
 		var old string
 		var new string
