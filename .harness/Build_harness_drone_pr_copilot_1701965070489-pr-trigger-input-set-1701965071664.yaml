@@ -1,0 +1,14 @@
+inputSet:
+  name: Build_harness_drone_pr_copilot_1701965070489-pr-trigger-input-set
+  identifier: Build_harness_drone_pr_copilot_1701965070489prtriggerinputset
+  orgIdentifier: default
+  projectIdentifier: default_project
+  pipeline:
+    identifier: Build_harness_drone_pr_copilot_1701965070489
+    properties:
+      ci:
+        codebase:
+          build:
+            type: PR
+            spec:
+              number: <+trigger.prNumber>
